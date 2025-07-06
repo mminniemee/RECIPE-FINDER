@@ -19,8 +19,7 @@ Backend: Python 3.9, Flask.
 
 Database: SQLite with SQLAlchemy
 
-PREVIEW OF WEBSITE:
+PREVIEW OF WEBSITE IN ANIMATION.GIF
 
-![image](https://github.com/user-attachments/assets/1316c9a2-8709-4d25-8ad5-939d3d624bdd)
 
 
