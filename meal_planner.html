@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Meal Planner{% endblock %}
+
+{% block extra_css %}
+<style>
+    .meal-planner-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        text-align: center;
+        color: var(--strawberry-dark);
+        margin-bottom: 10px;
+    }
+
+    h3.subtitle {
+        text-align: center;
+        color: var(--mango);
+        margin-bottom: 30px;
+    }
+
+    .search-box {
+        margin: 0 auto 30px;
+        max-width: 600px;
+        position: relative;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 12px 20px;
+        border: 2px solid var(--apple);
+        border-radius: 30px;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .search-box input:focus {
+        border-color: var(--mango);
+        box-shadow: 0 0 0 3px rgba(240, 128, 42, 0.2);
+    }
+
+    .autocomplete-results {
+        position: absolute;
+        width: 100%;
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 2px solid var(--apple);
+        border-radius: 0 0 15px 15px;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .autocomplete-results div {
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .autocomplete-results div:hover {
+        background-color: var(--grapefruit);
+    }
+
+    .days-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .day-row {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .day-header {
+        width: 150px;
+        background-color: var(--strawberry);
+        color: white;
+        padding: 15px;
+        border-radius: 15px;
+        text-align: center;
+        position: sticky;
+        top: 20px;
+    }
+
+    .day-header h3 {
+        margin: 0 0 5px;
+    }
+
+    .day-count {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .recipes-container {
+        flex: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        min-height: 100px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    .recipes-container.drag-over {
+        background-color: var(--grapefruit);
+        border: 2px dashed var(--strawberry);
+    }
+
+    .recipe-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 12px 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: grab;
+        transition: all 0.2s ease;
+    }
+
+    .recipe-card:active {
+        cursor: grabbing;
+    }
+
+    .recipe-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .remove-btn {
+        background-color: var(--lychee);
+        color: white;
+        border: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .remove-btn:hover {
+        background-color: var(--strawberry-dark);
+        transform: scale(1.1);
+    }
+
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-spinner {
+        border: 5px solid var(--grapefruit);
+        border-top: 5px solid var(--strawberry);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+        color: #999;
+        font-style: italic;
+        align-self: center;
+        margin: auto;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .day-row {
+            flex-direction: column;
+        }
+        
+        .day-header {
+            width: 100%;
+            position: static;
+        }
+        
+        .recipes-container {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="meal-planner-container">
+    <h1>Meal Planner 🍽️</h1>
+    <h3 class="subtitle">Drag recipes to plan your meals</h3>
+
+    <div class="search-box">
+        <input type="text" id="recipe-search" placeholder="Search for recipes...">
+        <div class="autocomplete-results" id="autocomplete-results"></div>
+    </div>
+
+    <div class="days-container">
+        {% for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] %}
+        <div class="day-row">
+            <div class="day-header">
+                <h3>{{ day }}</h3>
+                <div class="day-count">
+                    {{ meal_plans|selectattr('day', 'equalto', day)|list|length }}/5 meals
+                </div>
+            </div>
+            
+            <div class="recipes-container"
+                 id="{{ day.lower() }}"
+                 ondrop="dropRecipe(event, '{{ day }}')"
+                 ondragover="allowDrop(event)"
+                 ondragleave="dragLeave(event)">
+                {% for plan in meal_plans if plan.day == day %}
+                <div class="recipe-card" 
+                     draggable="true"
+                     ondragstart="dragRecipe(event, '{{ plan.id }}')"
+                     data-recipe-id="{{ plan.recipe.id }}"
+                     data-recipe-name="{{ plan.recipe.name }}">
+                    <span>{{ plan.recipe.name }}</span>
+                    <button class="remove-btn" onclick="removeMeal(event, '{{ plan.id }}')">✕</button>
+                </div>
+                {% endfor %}
+                
+                {% if meal_plans|selectattr('day', 'equalto', day)|list|length == 0 %}
+                <div class="empty-state">Drop recipes here</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<script>
+    // Autocomplete functionality
+    const searchBox = document.getElementById("recipe-search");
+    const autocompleteResults = document.getElementById("autocomplete-results");
+    const loadingOverlay = document.getElementById("loading-overlay");
+
+    searchBox.addEventListener("input", debounce(async function() {
+        const query = this.value.trim();
+        if (query.length < 2) {
+            autocompleteResults.style.display = "none";
+            return;
+        }
+
+        loadingOverlay.style.display = "flex";
+        autocompleteResults.style.display = "none";
+
+        try {
+            const response = await fetch(`/search_recipes?q=${encodeURIComponent(query)}`);
+            
+            if (!response.ok) {
+                throw new Error("Failed to fetch recipes");
+            }
+            
+            const recipes = await response.json();
+            autocompleteResults.innerHTML = '';
+
+            if (recipes.length > 0) {
+                recipes.forEach(recipe => {
+                    const div = document.createElement('div');
+                    div.textContent = recipe.name;
+                    div.draggable = true;
+                    div.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData("recipeId", recipe.id);
+                        e.dataTransfer.setData("recipeName", recipe.name);
+                    });
+                    autocompleteResults.appendChild(div);
+                });
+                autocompleteResults.style.display = "block";
+            } else {
+                const noResults = document.createElement('div');
+                noResults.textContent = 'No recipes found';
+                noResults.style.padding = '12px 20px';
+                autocompleteResults.appendChild(noResults);
+                autocompleteResults.style.display = "block";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            const errorDiv = document.createElement('div');
+            errorDiv.textContent = 'Error loading recipes';
+            errorDiv.style.padding = '12px 20px';
+            errorDiv.style.color = 'var(--strawberry-dark)';
+            autocompleteResults.innerHTML = '';
+            autocompleteResults.appendChild(errorDiv);
+            autocompleteResults.style.display = "block";
+        } finally {
+            loadingOverlay.style.display = "none";
+        }
+    }, 300));
+
+    // Hide autocomplete when clicking elsewhere
+    document.addEventListener("click", function(event) {
+        if (!searchBox.contains(event.target) && !autocompleteResults.contains(event.target)) {
+            autocompleteResults.style.display = "none";
+        }
+    });
+
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this, args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+
+    // Drag and drop functions
+    function allowDrop(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add("drag-over");
+    }
+
+    function dragLeave(event) {
+        event.preventDefault();
+        event.currentTarget.classList.remove("drag-over");
+    }
+
+    function dragRecipe(event, mealPlanId) {
+        const recipeCard = event.currentTarget;
+        event.dataTransfer.setData("mealPlanId", mealPlanId);
+        event.dataTransfer.setData("recipeId", recipeCard.dataset.recipeId);
+        event.dataTransfer.setData("recipeName", recipeCard.dataset.recipeName);
+        recipeCard.style.opacity = "0.4";
+    }
+
+    async function dropRecipe(event, day) {
+        event.preventDefault();
+        event.currentTarget.classList.remove("drag-over");
+        
+        const mealPlanId = event.dataTransfer.getData("mealPlanId");
+        const recipeId = event.dataTransfer.getData("recipeId");
+        const recipeName = event.dataTransfer.getData("recipeName");
+        
+        if (!recipeId) {
+            console.error("No recipe ID in drop data");
+            return;
+        }
+
+        loadingOverlay.style.display = "flex";
+
+        try {
+            let endpoint, payload;
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            };
+            
+            if (mealPlanId) {
+                // Moving existing meal
+                endpoint = "/move_meal";
+                payload = { 
+                    meal_plan_id: mealPlanId, 
+                    new_day: day 
+                };
+            } else {
+                // Adding new meal
+                endpoint = "/add_meal";
+                payload = { 
+                    day: day, 
+                    recipe_id: recipeId 
+                };
+            }
+
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to update meal plan");
+            }
+
+            window.location.reload();
+        } catch (error) {
+            console.error("Error:", error);
+            alert(error.message);
+        } finally {
+            loadingOverlay.style.display = "none";
+            document.querySelectorAll(".recipe-card").forEach(card => {
+                card.style.opacity = "1";
+            });
+        }
+    }
+
+    async function removeMeal(event, mealPlanId) {
+        event.stopPropagation();
+        event.preventDefault();
+        
+        if (!confirm("Remove this meal from your plan?")) return;
+
+        loadingOverlay.style.display = "flex";
+
+        try {
+            const response = await fetch(`/remove_meal/${mealPlanId}`, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to remove meal");
+            }
+
+            window.location.reload();
+        } catch (error) {
+            console.error("Error:", error);
+            alert(error.message);
+        } finally {
+            loadingOverlay.style.display = "none";
+        }
+    }
+
+    // Reset opacity after drag ends
+    document.addEventListener("dragend", function() {
+        document.querySelectorAll(".recipe-card").forEach(card => {
+            card.style.opacity = "1";
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe Search{% endblock %}
+
+{% block extra_css %}
+<style>
+    .home-container {
+        padding: 20px;
+    }
+    
+    h1, h2, h3 {
+        color: rgb(201, 17, 17);
+    }
+    
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    h1:after {
+        content: "";
+        display: block;
+        width: 100px;
+        height: 4px;
+        background: var(--apple);
+        margin: 10px auto;
+        border-radius: 2px;
+    }
+    
+    .search-container {
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .search-container input {
+        width: 60%;
+        padding: 12px 20px;
+        border: 2px solid var(--apple);
+        border-radius: 30px;
+        font-size: 16px;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+    
+    .search-container input:focus {
+        border-color: var(--mango);
+        box-shadow: 0 0 0 3px rgba(240, 128, 42, 0.2);
+    }
+    
+    .search-container button {
+        padding: 12px 30px;
+        background-color: var(--mango);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .search-container button:hover {
+        background-color: var(--mango-dark);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(240, 128, 42, 0.3);
+    }
+    
+    h2 {
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .filters-container {
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+        margin: 30px 0;
+    }
+    
+    .filter-section {
+        flex: 1;
+        max-width: 400px;
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    
+    .filter-section h3 {
+        margin-top: 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--grapefruit);
+    }
+    
+    .filter-section input[type="text"] {
+        width: 80%;
+        padding: 10px;
+        border: 2px solid var(--apple);
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .slider-container {
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .slider-container input[type="range"] {
+        width: 60%;
+        height: 8px;
+        background: var(--grapefruit);
+        border-radius: 5px;
+        outline: none;
+    }
+    
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--strawberry);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    
+    #max_time_value {
+        font-weight: bold;
+        color: var(--strawberry);
+    }
+    
+    ul {
+        list-style: none;
+        padding: 0;
+        max-width: 800px;
+        margin: 30px auto;
+    }
+    
+    ul li {
+        background: white;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    ul li:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    ul li a {
+        color: var(--strawberry);
+        text-decoration: none;
+        font-weight: 500;
+        flex-grow: 1;
+    }
+    
+    ul li span {
+        color: #666;
+        margin: 0 15px;
+    }
+    
+    .fav-button {
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        background-color: var(--lychee);
+        color: white;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        font-weight: bold;
+    }
+    
+    .fav-button.favourited {
+        background-color: var(--strawberry);
+    }
+    
+    .fav-button:hover {
+        background-color: var(--strawberry-dark);
+        transform: translateY(-2px);
+    }
+
+    .recommendations-section {
+        margin-top: 50px;
+    }
+
+    .section-title {
+        color: var(--strawberry-dark);
+        border-bottom: 2px solid var(--grapefruit);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    .recommendation-badge {
+        background-color: var(--mango);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="home-container">
+        <!-- Centered Title -->
+        <h1>Welcome to Recipe Finder <span style="color: var(--mango);">🍡</span></h1>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="search_query" name="q" placeholder="Search by name, tags, or ingredients...">
+            <button type="button" onclick="performSearch()">Search</button>
+        </div>
+
+        <!-- OR Text -->
+        <h2>OR</h2>
+
+        <!-- Filters Section -->
+        <div class="filters-container">
+            <!-- Include/Exclude Ingredients (Left Side) -->
+            <div class="filter-section">
+                <h3>Include Ingredients ✔️</h3>
+                <input type="text" id="include_ingredients" name="include_ingredients" placeholder="Enter ingredients to include...">
+                <h3>Exclude Ingredients ❌</h3>
+                <input type="text" id="exclude_ingredients" name="exclude_ingredients" placeholder="Enter ingredients to exclude...">
+            </div>
+
+            <!-- Dietary Requirements (Right Side) -->
+            <div class="filter-section">
+                <h3>Dietary Requirements 🥬</h3>
+                <label style="display: block; margin-bottom: 15px;">
+                    <input type="checkbox" id="vegetarian" name="dietary_requirements" value="vegetarian" style="margin-right: 10px;">
+                    Vegetarian
+                </label>
+                <label style="display: block; margin-bottom: 15px;">
+                    <input type="checkbox" id="vegan" name="dietary_requirements" value="vegan" style="margin-right: 10px;">
+                    Vegan
+                </label>
+                <label style="display: block; margin-bottom: 15px;">
+                    <input type="checkbox" id="gluten_free" name="dietary_requirements" value="gluten-free" style="margin-right: 10px;">
+                    Gluten-Free
+                </label>
+            </div>
+        </div>
+
+        <!-- Cooking Time Slider -->
+        <div class="slider-container">
+            <label for="max_time">Maximum Cooking Time (minutes) 🕰️:</label>
+            <input type="range" id="max_time" name="max_time" min="0" max="2000" value="60" class="slider">
+            <span id="max_time_value">60</span> minutes
+        </div>
+
+        <!-- Search Button -->
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="button" onclick="performSearch()" style="width: 60%; padding: 15px; background-color: var(--mango); color: white; border: none; border-radius: 30px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                Search Recipes
+            </button>
+        </div>
+
+        {% if recommended_recipes %}
+    <div class="recommendations-section">
+        <h2 class="section-title">Recommended For You 
+            <span class="recommendation-badge">Explore recipes</span>
+        </h2>
+        
+        <ul class="recipes-list">
+            {% for recipe in recommended_recipes %}
+            <li class="recipe-card">
+                <a href="{{ url_for('routes.recipe_detail', recipe_id=recipe.id) }}">
+                    {{ recipe.name }}
+                    {% if recipe.recommendation_reason %}
+                    <span class="recommendation-hint">({{ recipe.recommendation_reason }})</span>
+                    {% endif %}
+                </a>
+                <span class="time-badge">⏳ {{ recipe.minutes }} mins</span>
+                <button class="fav-button {% if recipe.id in favourite_recipe_ids %}favourited{% endif %}" 
+                        data-recipe-id="{{ recipe.id }}">
+                    {% if recipe.id in favourite_recipe_ids %}❤️ Favourited{% else %}🤍 Favourite{% endif %}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+        <h2>Top Recipes</h2>
+        <ul>
+            {% for recipe in recipes %}
+            <li>
+                <a href="{{ url_for('routes.recipe_detail', recipe_id=recipe.id) }}">{{ recipe.name }}</a>
+                <span>⏳ {{ recipe.minutes }} mins</span>
+                <button class="fav-button {% if recipe.id in favourite_recipe_ids %}favourited{% endif %}" 
+                        data-recipe-id="{{ recipe.id }}">
+                    {% if recipe.id in favourite_recipe_ids %}❤️ Favourited{% else %}🤍 Favourite{% endif %}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        // Update slider value display
+        const slider = document.getElementById("max_time");
+        const sliderValue = document.getElementById("max_time_value");
+        sliderValue.textContent = slider.value;
+        slider.oninput = function() {
+            sliderValue.textContent = this.value;
+        };
+
+        // Perform search
+        function performSearch() {
+            const query = document.getElementById("search_query").value;
+            const maxTime = document.getElementById("max_time").value;
+            const includeIngredients = document.getElementById("include_ingredients").value.split(",").map(i => i.trim());
+            const excludeIngredients = document.getElementById("exclude_ingredients").value.split(",").map(i => i.trim());
+            const dietaryRequirements = Array.from(document.querySelectorAll('input[name="dietary_requirements"]:checked')).map(cb => cb.value);
+
+            // Build the URL with query parameters
+            const params = new URLSearchParams();
+            if (query) params.set("q", query);
+            if (maxTime) params.set("max_time", maxTime);
+            if (includeIngredients.length) params.set("include_ingredients", includeIngredients.join(","));
+            if (excludeIngredients.length) params.set("exclude_ingredients", excludeIngredients.join(","));
+            if (dietaryRequirements.length) params.set("dietary_requirements", dietaryRequirements.join(","));
+
+            // Redirect to the search results page
+            window.location.href = `/search?${params.toString()}`;
+        }
+
+        // Simple favorite button functionality
+        document.querySelectorAll('.fav-button').forEach(button => {
+        button.addEventListener('click', async function() {
+        const recipeId = this.getAttribute('data-recipe-id');
+        
+        try {
+            const response = await fetch(`/toggle_favourite/${recipeId}`, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === "added") {
+                    this.innerHTML = "❤️ Favourited";
+                    this.classList.add("favourited");
+                } else {
+                    this.innerHTML = "🤍 Favourite";
+                    this.classList.remove("favourited");
+                }
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Please login again');
+                window.location.href = "/login";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Something went wrong");
+        }
+    });
+});
+    </script>
+{% endblock %}

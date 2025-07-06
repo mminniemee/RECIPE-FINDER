@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-results-container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(252, 139, 154, 0.2);
+    }
+
+    .search-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .search-header h1 {
+        color: var(--strawberry-dark);
+        margin-bottom: 10px;
+        font-size: 2rem;
+        position: relative;
+    }
+
+    .search-header h1:after {
+        content: "";
+        display: block;
+        width: 100px;
+        height: 4px;
+        background: var(--apple);
+        margin: 10px auto;
+        border-radius: 2px;
+    }
+
+    .results-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .result-item {
+        background: white;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 15px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .result-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .result-item a {
+        color: var(--strawberry);
+        text-decoration: none;
+        font-weight: 500;
+        flex-grow: 1;
+        transition: all 0.2s ease;
+    }
+
+    .result-item a:hover {
+        color: var(--strawberry-dark);
+        text-decoration: underline;
+    }
+
+    .time-badge {
+        background-color: var(--grapefruit);
+        color: rgb(33, 32, 32);
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 14px;
+        margin: 0 15px;
+    }
+
+    .fav-button {
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        background-color: var(--lychee);
+        color: white;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        font-weight: bold;
+    }
+
+    .fav-button.favourited {
+        background-color: var(--strawberry);
+    }
+
+    .fav-button:hover {
+        background-color: var(--strawberry-dark);
+        transform: translateY(-2px);
+    }
+
+    .back-home-button {
+        display: block;
+        margin: 30px auto 0;
+        padding: 12px 25px;
+        background-color: var(--apple);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .back-home-button:hover {
+        background-color: var(--mango);
+        transform: translateY(-2px);
+    }
+
+    /* Animation for new results */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-item {
+        animation: fadeIn 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+
+    /* Stagger animations */
+    .result-item:nth-child(1) { animation-delay: 0.1s; }
+    .result-item:nth-child(2) { animation-delay: 0.2s; }
+    .result-item:nth-child(3) { animation-delay: 0.3s; }
+    .result-item:nth-child(4) { animation-delay: 0.4s; }
+    .result-item:nth-child(5) { animation-delay: 0.5s; }
+    .result-item:nth-child(n+6) { animation-delay: 0.6s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-results-container">
+    <div class="search-header">
+        <h1>Search Results</h1>
+        <p>Found {{ recipes|length }} recipes matching your search</p>
+    </div>
+
+    <ul class="results-list">
+        {% for recipe in recipes %}
+        <li class="result-item"style="animation-delay: {{ loop.index * 0.1 }}s">
+            <a href="{{ url_for('routes.recipe_detail', recipe_id=recipe.id) }}">{{ recipe.name }}</a>
+            <span class="time-badge">⏳ {{ recipe.minutes }} mins</span>
+            <button class="fav-button {% if recipe.id in favourite_recipe_ids %}favourited{% endif %}" 
+                    data-recipe-id="{{ recipe.id }}">
+                {% if recipe.id in favourite_recipe_ids %}❤️ Favourited{% else %}🤍 Favourite{% endif %}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <button class="back-home-button"onclick="window.location.href='{{ url_for('routes.home') }}'">Back Home</button>
+</div>
+
+<script>
+    document.querySelectorAll('.fav-button').forEach(button => {
+        button.addEventListener('click', async function() {
+            const recipeId = this.getAttribute('data-recipe-id');
+            
+            try {
+                const response = await fetch(`/toggle_favourite/${recipeId}`, { 
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Please login to favorite recipes');
+                }
+
+                const data = await response.json();
+                
+                if (data.status === "added") {
+                    this.innerHTML = "❤️ Favourited";
+                    this.classList.add("favourited");
+                } else if (data.status === "removed") {
+                    this.innerHTML = "🤍 Favourite";
+                    this.classList.remove("favourited");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert(error.message);
+                if (error.message.includes('login')) {
+                    window.location.href = "/login";
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

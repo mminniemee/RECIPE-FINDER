@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hide navigation and chat for login page */
+    nav, #chat-container {
+        display: none;
+    }
+    
+    /* Gradient Wave Background */
+    body {
+        background: linear-gradient(-45deg, #f9b567, #fc8b9a, #61827b, #FAC5C7);
+        background-size: 400% 400%;
+        animation: gradientWave 15s ease infinite;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    @keyframes gradientWave {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Neon Glow Container */
+    .login-container {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 500px;
+        border: 2px solid transparent;
+        animation: borderGlow 3s infinite alternate;
+        box-shadow: 0 0 10px rgba(252, 139, 154, 0.5),
+                    0 0 20px rgba(252, 139, 154, 0.3),
+                    0 0 30px rgba(252, 139, 154, 0.1);
+    }
+
+    @keyframes borderGlow {
+        0% { border-color: rgba(252, 139, 154, 0.1); }
+        100% { border-color: rgba(252, 139, 154, 0.5); }
+    }
+
+    /* Form Styles */
+    .login-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .login-header h1 {
+        color: var(--strawberry-dark);
+        margin-bottom: 8px;
+        font-size: 1.8rem;
+        text-shadow: 0 0 5px rgba(252, 139, 154, 0.3);
+    }
+
+    .login-header p {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .input-group input {
+        width: 90%;
+        padding: 12px 40px 12px 15px;
+        border: 2px solid var(--grapefruit);
+        border-radius: 25px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background-color: rgba(250, 197, 199, 0.1);
+    }
+
+    .input-group input:focus {
+        border-color: var(--strawberry);
+        box-shadow: 0 0 0 3px rgba(252, 139, 154, 0.2);
+        outline: none;
+    }
+
+    .input-group label {
+        position: absolute;
+        left: 13px;
+        top: 12px;
+        color: #999;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 5px;
+        font-size: 15px;
+    }
+
+    .input-group input:focus + label,
+    .input-group input:not(:placeholder-shown) + label {
+        transform: translateY(-22px) scale(0.85);
+        color: var(--strawberry);
+    }
+
+    /* Password toggle button */
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--strawberry);
+        font-size: 18px;
+        padding: 5px;
+    }
+
+    /* Neon Button */
+    .login-button {
+        padding: 12px;
+        background-color: var(--strawberry);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 12px rgba(252, 139, 154, 0.4);
+        text-shadow: 0 0 3px #fff,
+                    0 0 6px #fff,
+                    0 0 12px var(--strawberry);
+        animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 3px var(--strawberry); }
+        50% { box-shadow: 0 0 15px var(--strawberry); }
+        100% { box-shadow: 0 0 3px var(--strawberry); }
+    }
+
+    .login-button:hover {
+        background-color: var(--strawberry-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(252, 139, 154, 0.6);
+    }
+
+    .login-footer {
+        text-align: center;
+        margin-top: 25px;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .login-footer a {
+        color: var(--strawberry);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .login-footer a:hover {
+        color: var(--strawberry-dark);
+        text-decoration: underline;
+    }
+
+    .error-message {
+        color: var(--strawberry-dark);
+        font-size: 12px;
+        margin-top: 3px;
+        padding-left: 15px;
+    }
+
+    /* Food Icon Animation */
+    @keyframes flyIn {
+        0% { transform: translate(0, 0) scale(0); opacity: 0; }
+        50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+
+    .food-icon {
+        position: absolute;
+        font-size: 24px;
+        pointer-events: none;
+        animation: flyIn 1s forwards;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-header">
+        <h1>Welcome Back To RECIPE FINDER! 👋</h1>
+        <p>Log in to access your recipes and meal plans</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category != 'success' %}
+                    <div class="alert-message {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('routes.login') }}" class="login-form" id="loginForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="input-group">
+            <input type="email" name="email" id="email" placeholder=" " required 
+                   value="{{ request.form.email if request.form.email }}">
+            <label for="email">Email Address</label>
+            {% if form and form.email.errors %}
+                {% for error in form.email.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="input-group">
+            <input type="password" name="password" id="password" placeholder=" " required>
+            <label for="password">Password</label>
+            <button type="button" class="password-toggle" id="togglePassword">
+                <i class="fas fa-eye"></i>
+            </button>
+            {% if form and form.password.errors %}
+                {% for error in form.password.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <button type="submit" class="login-button">Login</button>
+    </form>
+
+    <div class="login-footer">
+        <p>Don't have an account? <a href="{{ url_for('routes.signup') }}">Sign up here</a></p>
+    </div>
+</div>
+
+<!-- Font Awesome for the eye icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+    // Password toggle functionality
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    
+    togglePassword.addEventListener('click', function() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        // Toggle eye icon
+        if (type === 'password') {
+            this.innerHTML = '<i class="fas fa-eye"></i>';
+        } else {
+            this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        }
+    });
+
+    // Food icon animation on form submit
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        if(this.checkValidity()) {
+            e.preventDefault();
+            
+            const foods = ['🍎', '🍕', '🥑', '🍔', '🥦','🌯', '🥙' ,'🍝' ,'🍜' ,'🍲' ,'🍛', '🍣','🥟', '🥚', '🥘', '🥞', '🧇'];
+            const container = document.querySelector('body');
+            
+            foods.forEach((food, i) => {
+                const el = document.createElement('div');
+                el.className = 'food-icon';
+                el.textContent = food;
+                el.style.left = Math.random() * 100 + '%';
+                el.style.top = Math.random() * 100 + '%';
+                el.style.animationDelay = (i * 0.4) + 's';
+                container.appendChild(el);
+                
+                setTimeout(() => el.remove(), 1000);
+            });
+            
+            setTimeout(() => this.submit(), foods.length * 200 + 500);
+        }
+    });
+</script>
+{% endblock %}

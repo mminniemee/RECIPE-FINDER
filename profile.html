@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - {{ user.username }}{% endblock %}
+
+{% block content %}
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <h1>{{ user.username }}</h1>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="profile-details">
+            <h2>Profile Information👤</h2>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Username:</strong> {{ user.username }}</p>
+        </div>
+
+        <!-- Edit Profile Button -->
+        <a href="{{ url_for('routes.edit_profile') }}" class="edit-profile-button">Edit Profile</a>
+    </div>
+{% endblock %}

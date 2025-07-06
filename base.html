@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Recipe App{% endblock %}</title>
+    <style>
+        /* Color Variables */
+        :root {
+            --matcha-dark: #61827b;
+            --strawberry: #fc8b9a;
+            --mango: #F0802A;
+            --lychee: #F78493;
+            --apple: #f9b567;
+            --grapefruit: #FAC5C7;
+            --strawberry-dark: #c53347;
+            --mango-dark: #f1db5c;
+        }
+
+        /* Navigation Bar Styles */
+        nav {
+            background-color: var(--strawberry);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 18px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        nav a:hover {
+            background-color: var(--strawberry-dark);
+            transform: translateY(-2px);
+        }
+
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--matcha-dark);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .content {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgb(250, 215, 215);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+    {% block extra_css %}
+    {% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav>
+        <a href="{{ url_for('routes.home') }}">Home</a>
+        {% if current_user.is_authenticated %}
+           <a href="{{ url_for('routes.favourites') }}">Your Favourites</a>
+           <a href="{{ url_for('routes.meal_planner') }}">Meal Planner</a>
+           <a href="{{ url_for('routes.shopping_list') }}">Shopping List</a>
+           <a href="{{ url_for('routes.profile') }}">Profile</a>
+           <a href="{{ url_for('routes.logout') }}">Logout</a>
+        {% else %}
+           <a href="{{ url_for('routes.login') }}">Login</a>
+           <a href="{{ url_for('routes.signup') }}">Sign Up</a>
+        {% endif %}
+    </nav>
+
+    <!-- Content Block -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

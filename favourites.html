@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Your Favourites{% endblock %}
+
+{% block extra_css %}
+<style>
+    .favourites-container {
+        padding: 20px;
+    }
+    
+    h1 {
+        color: var(--strawberry-dark);
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    h1:after {
+        content: "";
+        display: block;
+        width: 100px;
+        height: 4px;
+        background: var(--apple);
+        margin: 10px auto;
+        border-radius: 2px;
+    }
+    
+    .favourites-list {
+        list-style: none;
+        padding: 0;
+        max-width: 800px;
+        margin: 30px auto;
+    }
+    
+    .favourites-list li {
+        background: white;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .favourites-list li:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .favourites-list li a {
+        color: var(--strawberry-dark);
+        text-decoration: none;
+        font-weight: 500;
+        flex-grow: 1;
+    }
+    
+    .favourites-list li span {
+        color: #666;
+        margin: 0 15px;
+    }
+    
+    .remove-btn {
+        background-color: var(--strawberry);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .remove-btn:hover {
+        background-color: var(--strawberry-dark);
+        transform: translateY(-2px);
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 10px 20px;
+        background-color: var(--mango);
+        color: white;
+        text-decoration: none;
+        border-radius: 30px;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    
+    .back-link:hover {
+        background-color: var(--mango-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(240, 128, 42, 0.3);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--lychee);
+        font-size: 18px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="favourites-container">
+        <h1>Your Favourites ❤️</h1>
+        
+        {% if recipes %}
+        <ul class="favourites-list">
+            {% for fav in recipes %}
+                <li>
+                    <a href="{{ url_for('routes.recipe_detail', recipe_id=fav.id) }}">{{ fav.name }}</a>
+                    <span>⏳ {{ fav.minutes }} mins</span>
+                    <button onclick="removeFavourite('{{ fav.id }}')" class="remove-btn">
+                        ❌ Remove
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+            <p>You haven't saved any favourites yet!</p>
+            <p>Find some delicious recipes and add them to your favourites.</p>
+        </div>
+        {% endif %}
+        
+        <div style="text-align: center;">
+            <a href="{{ url_for('routes.home') }}" class="back-link">Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        async function removeFavourite(recipeId) {
+        if (!confirm("Are you sure you want to remove this recipe from your favourites?")) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/remove_favourite/${recipeId}`, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to remove favourite");
+            }
+            
+            if (data.success) {
+                // Find and remove the recipe item from the DOM
+                const item = document.querySelector(`li a[href*="/recipe/${recipeId}"]`)?.closest('li');
+                if (item) {
+                    item.style.opacity = '0';
+                    setTimeout(() => item.remove(), 300);
+                }
+                
+                // Show message if no favorites left
+                if (document.querySelectorAll('.favourites-list li').length === 1) {
+                    document.querySelector('.favourites-list').innerHTML = `
+                        <div class="empty-state">
+                            <p>You haven't saved any favourites yet!</p>
+                            <p>Find some delicious recipes and add them to your favourites.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(data.error || "Failed to remove favourite");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert(error.message);
+        }
+    }
+    </script>
+{% endblock %}

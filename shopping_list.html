@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping List{% endblock %}
+
+{% block extra_css %}
+<style>
+    .shopping-list-container {
+        padding: 20px;
+        max-width: 800px;
+        margin: 30px auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    h1 {
+        text-align: center;
+        color: var(--strawberry-dark);
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    h1:after {
+        content: "";
+        display: block;
+        width: 100px;
+        height: 4px;
+        background: var(--apple);
+        margin: 10px auto;
+        border-radius: 2px;
+    }
+
+    .add-ingredient-form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .add-ingredient-form input[type="text"] {
+        flex: 1;
+        min-width: 200px;
+        padding: 12px 15px;
+        border: 2px solid var(--apple);
+        border-radius: 30px;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .add-ingredient-form select {
+        padding: 12px 15px;
+        border: 2px solid var(--apple);
+        border-radius: 30px;
+        background: white;
+        font-size: 16px;
+    }
+
+    .add-ingredient-form button {
+        padding: 12px 25px;
+        background-color: var(--mango);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .add-ingredient-form button:hover {
+        background-color: var(--mango-dark);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(240, 128, 42, 0.3);
+    }
+
+    .shopping-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .shopping-list li {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: rgb(250, 215, 215);
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .shopping-list li:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .shopping-list input[type="checkbox"] {
+        margin-right: 15px;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--strawberry);
+    }
+
+    .shopping-list .ingredient {
+        flex: 1;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .shopping-list .category-dropdown {
+        padding: 8px 12px;
+        border: 2px solid var(--apple);
+        border-radius: 30px;
+        margin-left: 10px;
+        background: white;
+        font-size: 14px;
+    }
+
+    .shopping-list .remove-button {
+        margin-left: 15px;
+        color: var(--strawberry);
+        cursor: pointer;
+        font-size: 18px;
+        transition: all 0.2s ease;
+    }
+
+    .shopping-list .remove-button:hover {
+        color: var(--strawberry-dark);
+        transform: scale(1.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="shopping-list-container">
+    <h1>Shopping List 🍅</h1>
+
+    <!-- Form to Add Ingredients Manually -->
+    <form class="add-ingredient-form" action="{{ url_for('routes.add_ingredient_manually') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="text" name="ingredient" placeholder="Enter an ingredient..." required>
+        <select name="category">
+            <option value="produce">Produce</option>
+            <option value="dairy">Dairy</option>
+            <option value="spices">Spices</option>
+            <option value="meat">Meat</option>
+            <option value="grains">Grains</option>
+            <option value="other">Other</option>
+        </select>
+        <button type="submit">Add Ingredient</button>
+    </form>
+    <!-- Display Shopping List Items -->
+    <ul class="shopping-list">
+        {% for item in items %}
+            <li>
+                <input type="checkbox"onclick="toggleItem({{ item.id }})"
+                       {% if item.checked %}checked{% endif %}>
+                <span class="ingredient">{{ item.ingredient }}</span>
+                <select class="category-dropdown"onchange="updateCategory({{ item.id }}, this.value)">
+                    <option value="produce" {% if item.category == 'produce' %}selected{% endif %}>Produce</option>
+                    <option value="dairy" {% if item.category == 'dairy' %}selected{% endif %}>Dairy</option>
+                    <option value="spices" {% if item.category == 'spices' %}selected{% endif %}>Spices</option>
+                    <option value="meat" {% if item.category == 'meat' %}selected{% endif %}>Meat</option>
+                    <option value="grains" {% if item.category == 'grains' %}selected{% endif %}>Grains</option>
+                    <option value="other" {% if item.category == 'other' %}selected{% endif %}>Other</option>
+                </select>
+                <span class="remove-button"onclick="removeItem({{ item.id }})">❌</span>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+    // Toggle item as checked/unchecked
+async function toggleItem(itemId) {
+    try {
+        const response = await fetch(`/toggle_shopping_item/${itemId}`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token() }}"
+            }
+        });
+        const data = await response.json();
+        if (!data.success) {
+            console.error("Error toggling item:", data.error);
+        }
+    } catch (error) {
+        console.error("Failed to toggle item:", error);
+    }
+}
+
+// Remove item from shopping list
+async function removeItem(itemId) {
+    if (!confirm("Remove this item from your shopping list?")) return;
+    
+    try {
+        const response = await fetch(`/remove_shopping_item/${itemId}`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token() }}"
+            }
+        });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            console.error("Failed to remove item");
+        }
+    } catch (error) {
+        console.error("Error removing item:", error);
+    }
+}
+
+// Update category of an item
+async function updateCategory(itemId, newCategory) {
+    try {
+        const response = await fetch(`/update_shopping_list_category/${itemId}`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ category: newCategory })
+        });
+        const data = await response.json();
+        if (!data.success) {
+            console.error("Error updating category:", data.error);
+        }
+    } catch (error) {
+        console.error("Failed to update category:", error);
+    }
+}
+</script>
+{% endblock %}

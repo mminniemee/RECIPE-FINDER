@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .recipe-detail-container {
+        padding: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .recipe-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .recipe-header h1 {
+        color: var(--strawberry-dark);
+        margin: 0;
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .fav-button {
+        background-color: var(--lychee);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .fav-button.favourited {
+        background-color: var(--strawberry);
+    }
+
+    .fav-button:hover {
+        background-color: var(--strawberry-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(252, 139, 154, 0.3);
+    }
+
+    .recipe-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .recipe-meta {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        background: var(--grapefruit);
+        padding: 10px 20px;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-title {
+        color: var(--strawberry-dark);
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--grapefruit);
+        margin-top: 30px;
+    }
+
+    .description {
+        line-height: 1.6;
+        font-size: 16px;
+    }
+
+    .ingredients-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .ingredient-item {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+
+    .ingredient-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .add-to-list-btn {
+        background-color: var(--mango);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .add-to-list-btn:hover {
+        background-color: var(--mango-dark);
+        transform: scale(1.05);
+    }
+
+    .steps-list {
+        list-style-position: inside;
+        padding-left: 0;
+    }
+
+    .steps-list li {
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 10px;
+    }
+
+    .nutrition-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .nutrition-item {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+
+    .nutrition-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--strawberry-dark);
+        margin-top: 5px;
+    }
+
+    .nutrition-label {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .back-button {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 25px;
+        background-color: var(--apple);
+        color: white;
+        text-decoration: none;
+        border-radius: 30px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+        background-color: var(--mango);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recipe-detail-container">
+    <div class="recipe-header">
+        <h1>{{ recipe.name }}</h1>
+        <button id="favorite-btn" 
+                class="fav-button {% if recipe.id in favourite_recipe_ids %}favourited{% endif %}"
+                data-recipe-id="{{ recipe.id }}">
+            {% if recipe.id in favourite_recipe_ids %}
+                ❤️ Favourited
+            {% else %}
+                🤍 Favourite
+            {% endif %}
+        </button>
+    </div>
+
+
+    
+
+    <div class="recipe-meta">
+        <div class="meta-item">
+            ⏳ {{ recipe.minutes }} minutes
+        </div>
+        <div class="meta-item">
+            📅 {{ recipe.submitted }}
+        </div>
+    </div>
+
+    <h2 class="section-title">Description</h2>
+    <p class="description">{{ recipe.description }}</p>
+    
+    <h2 class="section-title">Ingredients</h2>
+    <ul class="ingredients-list">
+        {% for ingredient in recipe.ingredients.split(",") %}
+            {% set ingredient_clean = ingredient.strip() %}
+            {% if ingredient_clean %}
+                <li class="ingredient-item">
+                    <span>{{ ingredient_clean }}</span>
+                    <button class="add-to-list-btn" 
+                            data-ingredient="{{ ingredient_clean }}">
+                        Add to List
+                    </button>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2 class="section-title">Steps</h2>
+    <ol class="steps-list">
+        {% for step in recipe.steps.split(",") %}
+            <li>{{ step }}</li>
+        {% endfor %}
+    </ol>
+
+    <h2 class="section-title">Nutritional Information</h2>
+    <div class="nutrition-grid">
+        <div class="nutrition-item">
+            <div class="nutrition-label">Calories</div>
+            <div class="nutrition-value">{{ recipe.calories }}</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">Total Fat</div>
+            <div class="nutrition-value">{{ recipe.total_fat }}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">Saturated Fat</div>
+            <div class="nutrition-value">{{ recipe.saturated_fat }}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">Carbohydrates</div>
+            <div class="nutrition-value">{{ recipe.carbohydrates }}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">Sugar</div>
+            <div class="nutrition-value">{{ recipe.sugar }}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">Protein</div>
+            <div class="nutrition-value">{{ recipe.protein }}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">Sodium</div>
+            <div class="nutrition-value">{{ recipe.sodium }}mg</div>
+        </div>
+    </div>
+
+    <a href="{{ url_for('routes.home') }}" class="back-button">← Back to Home</a>
+</div>
+
+<script>
+                    // Toggle favourite status - working version
+        document.getElementById('favorite-btn').addEventListener('click', function() {
+            const recipeId = this.getAttribute('data-recipe-id');
+            const isFavourited = this.classList.contains('favourited');
+            
+            fetch(`/toggle_favourite/${recipeId}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    throw new Error('Please login to favorite recipes');
+                }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === "added") {
+                    this.innerHTML = '❤️ Favourited';
+                    this.classList.add("favourited");
+                } else if (data.status === "removed") {
+                    this.innerHTML = '🤍 Favourite';
+                    this.classList.remove("favourited");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (error.message.includes('login')) {
+                    window.location.href = "/login?next=" + encodeURIComponent(window.location.pathname);
+                } else {
+                    alert('Error: ' + error.message);
+                }
+            });
+        });
+
+        // Add ingredient to shopping list - working version
+        document.querySelectorAll('.add-to-list-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const ingredient = this.getAttribute('data-ingredient');
+                
+                if (!ingredient || ingredient.trim() === '') {
+                    console.error('Empty ingredient');
+                    return;
+                }
+
+                fetch("/add_to_shopping_list", {
+                    method: "POST",
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        ingredient: ingredient.trim(),
+                        category: "uncategorized"
+                    })
+                })
+                .then(response => {
+                    if (response.status === 401) {
+                        throw new Error('Please login to add ingredients');
+                    }
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert("Added to shopping list: " + ingredient);
+                    } else {
+                        throw new Error(data.error || "Failed to add ingredient");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    if (error.message.includes('login')) {
+                        window.location.href = "/login?next=" + encodeURIComponent(window.location.pathname);
+                    } else {
+                        alert(error.message || "An error occurred");
+                    }
+                });
+            });
+        });
+    </script>
+</div>
+{% endblock %}
